@@ -131,6 +131,34 @@ public R<List<DishDto>> list(Dish dish){
     }).collect(Collectors.toList());
     return R.success(dishDtoList);
 }
+
+//菜品批量起售、停售
+@PostMapping("/status/{status}")
+    public R<String> status(@PathVariable("status") Integer status,@RequestParam List<Long> ids){
+        LambdaQueryWrapper<Dish> lqw = new LambdaQueryWrapper();
+        lqw.in(ids != null,Dish::getId,ids);
+        List<Dish> list = ds.list(lqw);
+        for (Dish dish:list){
+            if (dish != null){
+                dish.setStatus(status);
+                ds.updateById(dish);
+                return R.success("修改成功");
+            }
+        }
+        return R.error("修改失败");
+}
+
+// 套餐批量删除和单个删除
+@DeleteMapping
+    public R<String> delete(@RequestParam List<Long> ids){
+        //删除菜品  这里的删除是逻辑删除
+        ds.deleteByIds(ids);
+        //删除菜品对应的口味  也是逻辑删除
+        LambdaQueryWrapper<DishFlavor> lqw = new LambdaQueryWrapper();
+        lqw.in(DishFlavor::getDishId,ids);
+        dfs.remove(lqw);
+        return R.success("删除成功");
+}
 }
 
 
